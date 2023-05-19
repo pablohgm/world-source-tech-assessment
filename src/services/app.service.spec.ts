@@ -15,50 +15,50 @@ describe('AppController', () => {
   describe('calculateNumberOfPayments', () => {
     it('should return the correct number of payments for accelerated bi-weekly schedule', () => {
       const paymentSchedule = 'accelerated-bi-weekly';
-      const loanTerm = 24;
+      const amortizationPeriod = 5;
 
       const result = appService.calculateNumberOfPayments(
         paymentSchedule,
-        loanTerm,
+        amortizationPeriod,
       );
 
-      expect(result).toBe(12);
+      expect(result).toBe(130);
     });
 
     it('should return the correct number of payments for bi-weekly schedule', () => {
       const paymentSchedule = 'bi-weekly';
-      const loanTerm = 36;
+      const amortizationPeriod = 30;
 
       const result = appService.calculateNumberOfPayments(
         paymentSchedule,
-        loanTerm,
+        amortizationPeriod,
       );
 
-      expect(result).toBe(18);
+      expect(result).toBe(780);
     });
 
     it('should return the correct number of payments for monthly schedule', () => {
       const paymentSchedule = 'monthly';
-      const loanTerm = 48;
+      const amortizationPeriod = 20;
 
       const result = appService.calculateNumberOfPayments(
         paymentSchedule,
-        loanTerm,
+        amortizationPeriod,
       );
 
-      expect(result).toBe(48);
+      expect(result).toBe(240);
     });
 
     it('should return the loan term if an invalid payment schedule is provided', () => {
       const paymentSchedule = 'invalid';
-      const loanTerm = 60;
+      const amortizationPeriod = 10;
 
       const result = appService.calculateNumberOfPayments(
         paymentSchedule,
-        loanTerm,
+        amortizationPeriod,
       );
 
-      expect(result).toBe(60);
+      expect(result).toBe(120);
     });
   });
 });

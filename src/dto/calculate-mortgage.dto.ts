@@ -1,6 +1,6 @@
 import { IsEnum, IsNumber, Max, Min } from 'class-validator';
 
-enum PaymentSchedule {
+export enum PaymentSchedule {
   acceleratedBiWeekly = 'accelerated-bi-weekly',
   biWeekly = 'bi-weekly',
   monthly = 'monthly',

@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CalculateMortgageDto } from '../dto/calculate-mortgage.dto';
+import {
+  CalculateMortgageDto,
+  PaymentSchedule,
+} from '../dto/calculate-mortgage.dto';
 
 const INSURANCE_RATES = {
   '0.95': 0.04, // LTV <= 95%
@@ -30,15 +33,31 @@ export class AppService {
     return propertyPrice - downPayment + cmhcInsurance;
   }
 
-  calculateNumberOfPayments(paymentSchedule: string, loanTerm: number) {
+  calculateNumberOfPayments(
+    paymentSchedule: string,
+    amortizationPeriod: number,
+  ) {
+    const monthly = amortizationPeriod * 12;
+
     const scheduleMappings = {
-      'accelerated-bi-weekly': loanTerm / 2,
-      'bi-weekly': loanTerm / 2,
-      monthly: loanTerm,
+      'accelerated-bi-weekly': amortizationPeriod * 26,
+      'bi-weekly': amortizationPeriod * 26,
+      monthly,
     };
 
-    return scheduleMappings[paymentSchedule] || loanTerm;
+    return scheduleMappings[paymentSchedule] || monthly;
   }
+
+  calculateInterestRate(paymentSchedule: string, annualInterestRate: number) {
+    const scheduleMappings = {
+      'accelerated-bi-weekly': annualInterestRate / (26 * 100),
+      'bi-weekly': annualInterestRate / (26 * 100),
+      monthly: annualInterestRate / (12 * 100),
+    };
+
+    return scheduleMappings[paymentSchedule];
+  }
+
   calculateMortgagePayment(createMortgageDto: CalculateMortgageDto) {
     const {
       propertyPrice,
@@ -49,23 +68,31 @@ export class AppService {
     } = createMortgageDto;
 
     const loanAmount = this.calculateLoanAmount(propertyPrice, downPayment);
-    const interestRate = annualInterestRate / 100;
-    const loanTerm = amortizationPeriod * 12;
-    const monthlyInterestRate = interestRate / 12;
+
+    const interestRate = this.calculateInterestRate(
+      paymentSchedule,
+      annualInterestRate,
+    );
+
     const numberOfPayments = this.calculateNumberOfPayments(
       paymentSchedule,
-      loanTerm,
+      amortizationPeriod,
     );
 
     // Calculate the numerator value [P * i * (1 + i)^n]
     const numerator =
-      loanAmount *
-      monthlyInterestRate *
-      Math.pow(1 + monthlyInterestRate, numberOfPayments);
+      loanAmount * interestRate * Math.pow(1 + interestRate, numberOfPayments);
     // Calculate the denominator value [(1 + i)^n - 1]
-    const denominator = Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1;
+    const denominator = Math.pow(1 + interestRate, numberOfPayments) - 1;
     // Calculate the mortgage payment (M)
     const mortgagePayment = numerator / denominator;
+
+    if (paymentSchedule === PaymentSchedule.acceleratedBiWeekly) {
+      const additionalPrincipal = mortgagePayment / 12;
+      const acceleratedBiWeekly = mortgagePayment + additionalPrincipal;
+
+      return acceleratedBiWeekly.toFixed(2);
+    }
 
     return mortgagePayment.toFixed(2);
   }
